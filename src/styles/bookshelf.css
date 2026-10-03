@@ -1,0 +1,138 @@
+.bookshelf {
+		padding: 4px 0 8px;
+	}
+
+	/* 分类/状态筛选（影视页同款胶囊，边框 1.5px 略细于原版 2px） */
+	.books-filter-pill {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		padding: 0.375rem;
+		border-radius: 1rem;
+		border: 1.5px solid #000;
+		margin-bottom: 0.875rem;
+	}
+	:root.dark .books-filter-pill {
+		border-color: #fff;
+	}
+
+	.books-status-pill {
+		margin-bottom: 1.25rem;
+	}
+
+	.tools-tab-indicator {
+		position: absolute;
+		border-radius: 9999px;
+		background: #000;
+		transition:
+			left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+	:root.dark .tools-tab-indicator {
+		background: #fff;
+	}
+
+	.tools-tab-btn {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border: none;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		white-space: nowrap;
+		cursor: pointer;
+		background: transparent;
+		transition: color 0.2s;
+		flex-shrink: 0;
+		font-family: inherit;
+	}
+
+	.tools-tab-btn-active {
+		color: #fff;
+		cursor: default;
+	}
+	:root.dark .tools-tab-btn-active {
+		color: #000;
+	}
+
+	.tools-tab-btn-inactive {
+		color: #000;
+	}
+	.tools-tab-btn-inactive:hover {
+		opacity: 0.7;
+	}
+	:root.dark .tools-tab-btn-inactive {
+		color: #fff;
+	}
+
+	.tools-tab-badge {
+		font-size: 0.65rem;
+		padding: 0.0625rem 0.375rem;
+		border-radius: 9999px;
+		background: oklch(0.92 0 0);
+		color: oklch(0.35 0 0);
+		line-height: 1.4;
+	}
+	:root.dark .tools-tab-badge {
+		background: oklch(0.25 0 0);
+		color: oklch(0.65 0 0);
+	}
+
+	.tools-tab-btn-active .tools-tab-badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: #fff;
+	}
+	:root.dark .tools-tab-btn-active .tools-tab-badge {
+		background: rgba(0, 0, 0, 0.2);
+		color: #000;
+	}
+
+	/* 桌面 5 列、移动端 3 列（1fr 自适应列宽，书厚 left 定位不依赖固定书宽）
+	   外框与上方筛选胶囊同款黑色线框 + 大圆角（1.5px，略细于胶囊原版），把整片书架框住 */
+	.shelf-grid {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: 24px 16px;
+		padding: 20px 16px;
+		border: 1.5px solid #000;
+		border-radius: 1rem;
+		margin-bottom: 0.5rem;
+		--shelf-book-depth: 42px;
+	}
+	:root.dark .shelf-grid {
+		border-color: #fff;
+	}
+
+	.shelf-item {
+		min-width: 0;
+	}
+
+	/* SSR 首屏防闪烁：桌面隐藏第 11 本起，移动端隐藏第 7 本起（与 ClientPagination 10/6 本每页一致） */
+	.shelf-grid .shelf-item:nth-child(n + 11) {
+		display: none;
+	}
+
+	@media (max-width: 768px) {
+		.shelf-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 20px 10px;
+			padding: 16px 12px;
+			--shelf-book-depth: 30px;
+		}
+
+		.shelf-grid .shelf-item:nth-child(n + 7) {
+			display: none;
+		}
+	}
+
+	/* 分页与文章列表页 Pagination.astro 保持一致，无额外覆写 */

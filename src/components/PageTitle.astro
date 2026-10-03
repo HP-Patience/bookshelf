@@ -1,0 +1,26 @@
+---
+interface Props {
+  title: string;
+  eyebrow?: string;
+  description?: string;
+  variant?: "compact" | "stacked";
+  class?: string;
+}
+
+const { title, eyebrow, description, variant = "compact", class: className } = Astro.props;
+---
+
+<div class:list={["page-title", `page-title--${variant}`, className]}>
+  <div class="page-title__body">
+    {eyebrow && <span class="page-title__eyebrow">{eyebrow}</span>}
+    <h1 class="page-title__text">
+      <span class="page-title__measure" aria-hidden="true">{title}</span>
+      <svg class="page-title__svg" aria-hidden="true" focusable="false">
+        <text class="page-title__ink" x="0" y="0" dominant-baseline="text-before-edge">{title}</text>
+        <text class="page-title__solid" x="0" y="0" dominant-baseline="text-before-edge">{title}</text>
+      </svg>
+      <span class="sr-only">{title}</span>
+    </h1>
+    {description && <p class="page-title__desc">{description}</p>}
+  </div>
+</div>

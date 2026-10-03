@@ -1,0 +1,205 @@
+---
+import BookCard from "./BookCard.astro";
+import type { Book, BookStatus } from "../data/books";
+
+interface Props {
+  books: Book[];
+}
+
+const { books } = Astro.props;
+
+const statusConfig: Array<{ value: BookStatus | "all"; label: string }> = [
+  { value: "all", label: "全部" },
+  { value: 2, label: "读过" },
+  { value: 3, label: "在读" },
+  { value: 1, label: "想读" },
+  { value: 4, label: "搁置" },
+  { value: 5, label: "抛弃" },
+];
+
+const categories = Array.from(new Set(books.map((book) => book.category))).map((category) => ({
+  value: category,
+  label: category,
+}));
+
+const categoryFilters = [{ value: "all", label: "全部" }, ...categories];
+const categoryCounts = new Map(books.map((book) => [book.category, books.filter((item) => item.category === book.category).length]));
+const statusCounts = new Map(statusConfig.map((item) => [item.value, item.value === "all" ? books.length : books.filter((book) => book.status === item.value).length]));
+---
+
+<section class="bookshelf" data-bookshelf>
+  <div class="books-filter-pill" data-filter-group="category" aria-label="按分类筛选">
+    <div class="tools-tab-indicator" aria-hidden="true"></div>
+    {categoryFilters.map((filter, index) => (
+      <button
+        type="button"
+        class:list={["tools-tab-btn", index === 0 ? "tools-tab-btn-active" : "tools-tab-btn-inactive"]}
+        data-filter-key="category"
+        data-filter-value={filter.value}
+        aria-pressed={index === 0}
+      >
+        <span>{filter.label}</span>
+        <span class="tools-tab-badge">{filter.value === "all" ? books.length : categoryCounts.get(filter.value) ?? 0}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="books-filter-pill books-status-pill" data-filter-group="status" aria-label="按阅读状态筛选">
+    <div class="tools-tab-indicator" aria-hidden="true"></div>
+    {statusConfig.map((filter, index) => (
+      <button
+        type="button"
+        class:list={["tools-tab-btn", index === 0 ? "tools-tab-btn-active" : "tools-tab-btn-inactive"]}
+        data-filter-key="status"
+        data-filter-value={String(filter.value)}
+        aria-pressed={index === 0}
+      >
+        <span>{filter.label}</span>
+        <span class="tools-tab-badge">{statusCounts.get(filter.value) ?? 0}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="shelf-grid" data-book-grid>
+    {books.map((book) => (
+      <div
+        class="shelf-item"
+        data-book-item
+        data-category={book.category}
+        data-status={String(book.status)}
+      >
+        <BookCard book={book} />
+      </div>
+    ))}
+    <p class="empty-state" data-empty-state hidden>没有符合条件的书籍</p>
+  </div>
+
+  <div class="bookshelf-footer">
+    <p class="result-count sr-only" data-result-count aria-live="polite"></p>
+    <nav class="pagination" aria-label="书籍分页">
+      <button type="button" class="page-button" data-page="prev" aria-label="上一页">‹</button>
+      {Array.from({ length: Math.ceil(books.length / 6) }, (_, index) => (
+        <button type="button" class:list={["page-button", index === 0 && "is-active"]} data-page={index + 1}>
+          {index + 1}
+        </button>
+      ))}
+      <button type="button" class="page-button" data-page="next" aria-label="下一页">›</button>
+    </nav>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-bookshelf]");
+
+  if (root && !root.dataset.initialized) {
+    root.dataset.initialized = "true";
+
+    const items = Array.from(root.querySelectorAll<HTMLElement>("[data-book-item]"));
+    const categoryButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filter-key="category"]'));
+    const statusButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filter-key="status"]'));
+    const pageButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-page]"));
+    const resultCount = root.querySelector<HTMLElement>("[data-result-count]");
+    const emptyState = root.querySelector<HTMLElement>("[data-empty-state]");
+    const mobileQuery = window.matchMedia("(max-width: 768px)");
+    let selectedCategory = "all";
+    let selectedStatus = "all";
+    let currentPage = 1;
+
+    const setActive = (buttons: HTMLButtonElement[], active: HTMLButtonElement) => {
+      buttons.forEach((button) => {
+        const isActive = button === active;
+        button.classList.toggle("tools-tab-btn-active", isActive);
+        button.classList.toggle("tools-tab-btn-inactive", !isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+    };
+
+    const updateIndicators = () => {
+      root.querySelectorAll<HTMLElement>("[data-filter-group]").forEach((nav) => {
+        const active = nav.querySelector<HTMLElement>(".tools-tab-btn-active");
+        const indicator = nav.querySelector<HTMLElement>(".tools-tab-indicator");
+        if (!active || !indicator) return;
+        Object.assign(indicator.style, {
+          left: active.offsetLeft + "px", top: active.offsetTop + "px",
+          width: active.offsetWidth + "px", height: active.offsetHeight + "px", opacity: "1",
+        });
+      });
+    };
+
+    const render = () => {
+      updateIndicators();
+      const matched = items.filter((item) => {
+        const categoryMatch = selectedCategory === "all" || item.dataset.category === selectedCategory;
+        const statusMatch = selectedStatus === "all" || item.dataset.status === selectedStatus;
+        return categoryMatch && statusMatch;
+      });
+      const perPage = mobileQuery.matches ? 6 : 10;
+      const pageCount = Math.max(1, Math.ceil(matched.length / perPage));
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * perPage;
+      const end = start + perPage;
+
+      items.forEach((item) => {
+        const index = matched.indexOf(item);
+        item.style.display = index < start || index >= end ? "none" : "block";
+      });
+
+      pageButtons.forEach((button) => {
+        const direction = button.dataset.page;
+        if (direction === "prev" || direction === "next") {
+          button.disabled = direction === "prev" ? currentPage === 1 : currentPage === pageCount;
+          return;
+        }
+        const page = Number(direction);
+        const isActive = page === currentPage;
+        button.hidden = page > pageCount;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-current", isActive ? "page" : "false");
+      });
+
+      if (resultCount) {
+        resultCount.textContent = matched.length === 0 ? "" : `显示 ${start + 1}-${Math.min(end, matched.length)} / ${matched.length} 本`;
+      }
+      if (emptyState) emptyState.hidden = matched.length > 0;
+    };
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedCategory = button.dataset.filterValue ?? "all";
+        currentPage = 1;
+        setActive(categoryButtons, button);
+        render();
+      });
+    });
+
+    statusButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedStatus = button.dataset.filterValue ?? "all";
+        currentPage = 1;
+        setActive(statusButtons, button);
+        render();
+      });
+    });
+
+    pageButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.page;
+        currentPage = target === "prev" ? currentPage - 1 : target === "next" ? currentPage + 1 : Number(target) || 1;
+        render();
+      });
+    });
+
+    mobileQuery.addEventListener("change", () => {
+      currentPage = 1;
+      render();
+    });
+
+    root.querySelectorAll<HTMLImageElement>(".nb-book-illustration-img").forEach((image) => {
+      image.addEventListener("error", () => image.remove(), { once: true });
+    });
+
+    window.addEventListener("resize", updateIndicators);
+    document.fonts.ready.then(updateIndicators);
+    render();
+  }
+</script>

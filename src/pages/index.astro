@@ -1,0 +1,28 @@
+---
+import Layout from "../layouts/Layout.astro";
+import PageTitle from "../components/PageTitle.astro";
+import Bookshelf from "../components/Bookshelf.astro";
+import { books } from "../data/books";
+
+const readCount = books.filter((book) => book.status === 2).length;
+const readingCount = books.filter((book) => book.status === 3).length;
+const wantReadCount = books.filter((book) => book.status === 1).length;
+const buildTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Hong_Kong", hour12: false });
+---
+
+<Layout>
+  <main class="page-shell">
+    <header class="page-header">
+      <PageTitle title="我的书架" eyebrow="Books" description="记录阅读历程，分享书中精彩。" />
+      <div class="header-meta">
+        <span>上次更新：{buildTime}</span>
+        <div class="header-stats">
+          <span class="stat stat-read"><i aria-hidden="true"></i>读过 {readCount}</span>
+          <span class="stat stat-reading"><i aria-hidden="true"></i>在读 {readingCount}</span>
+          <span class="stat stat-want"><i aria-hidden="true"></i>想读 {wantReadCount}</span>
+        </div>
+      </div>
+    </header>
+    <Bookshelf books={books} />
+  </main>
+</Layout>
