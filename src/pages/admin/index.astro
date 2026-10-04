@@ -1,0 +1,81 @@
+---
+import "../../styles/admin.css";
+const development = import.meta.env.DEV;
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" />
+    <title>书架管理 · 本地后台</title>
+  </head>
+  <body>
+    <main id="local-only" class="local-only" hidden={development}>
+      <p class="eyebrow">书架 / 本地工具</p>
+      <h1>仅限本地使用</h1>
+      <p>后台不连接服务器。请在本机运行 <code>pnpm dev</code>，然后打开 <code>http://127.0.0.1:4321/admin/</code>。</p>
+      <a href="/">返回书架</a>
+    </main>
+    {development && (
+      <div id="admin-root" class="admin-shell" hidden>
+        <header class="admin-topbar">
+          <a class="brand" href="/">书架<span> / 本地后台</span></a>
+          <a class="back-link" href="/" target="_blank" rel="noopener">查看书架 ↗</a>
+        </header>
+        <main class="workspace">
+          <section class="workspace-title">
+            <h1>书架管理</h1>
+            <div class="title-actions"><button id="push-open" class="button secondary" disabled>执行推送</button><button id="add" class="button primary" disabled>＋ 新增书籍</button></div>
+          </section>
+          <p id="message" class="message" role="status" aria-live="polite"></p>
+          <section class="library-panel" aria-label="书籍管理列表">
+            <div class="library-toolbar">
+              <div><strong id="total">加载中</strong><span id="saved-state" class="muted"></span></div>
+              <label class="search-label"><span class="sr-only">搜索书名或分类</span><input id="search" type="search" placeholder="输入书名或分类…" autocomplete="off" /></label>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th scope="col">书籍</th><th scope="col">分类</th><th scope="col">状态</th><th scope="col">评分</th><th scope="col">开始日期</th><th scope="col">结束日期</th><th scope="col" class="actions-heading">操作</th></tr></thead><tbody id="book-list"></tbody></table></div>
+            <p id="empty" class="empty" hidden>没有找到书籍</p>
+            <footer class="library-footer"><span>本地文件</span><button id="reset" class="text-button" disabled>重新读取项目数据</button></footer>
+          </section>
+        </main>
+        <dialog id="editor" aria-labelledby="editor-title">
+          <form id="book-form">
+            <header class="editor-header"><h2 id="editor-title">新增书籍</h2><button type="button" id="close-editor" class="icon-button" aria-label="关闭编辑">×</button></header>
+            <div class="editor-body">
+              <section class="cover-editor" aria-label="封面上传与预览">
+                <div class="cover-preview"><img id="cover-preview" alt="封面预览" hidden /><span id="cover-placeholder">封面预览</span></div>
+                <label class="button secondary upload-label">上传封面图片<input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" /></label>
+                <p class="muted small">图片不超过 10MB</p>
+              </section>
+              <div class="form-fields">
+                <label>书名 <span class="required">*</span><input name="title" required maxlength="200" autocomplete="off" /></label>
+                <label>分类 <span class="required">*</span><input name="category" required maxlength="80" list="category-options" autocomplete="off" placeholder="选择或输入分类" /></label>
+                <datalist id="category-options"></datalist>
+                <div class="field-pair">
+                  <label>阅读状态<select name="status"><option value="2">读过</option><option value="3">在读</option><option value="1">想读</option><option value="4">搁置</option><option value="5">抛弃</option></select></label>
+                  <label>评分（0—10）<input name="score" type="number" min="0" max="10" step="0.1" value="0" required /></label>
+                </div>
+                <div class="field-pair"><label>开始日期<input name="startDate" type="date" /></label><label>结束日期<input name="endDate" type="date" /></label></div>
+                <label>封面地址 <span class="required">*</span><input name="image" required placeholder="上传图片或填写图片链接" /></label>
+                <button type="button" id="use-url" class="text-button">下载图片链接</button>
+              </div>
+            </div>
+            <p id="form-error" class="form-error" role="alert"></p>
+            <footer class="editor-footer"><div><button type="button" id="cancel-editor" class="button secondary">取消</button><button type="submit" class="button primary">保存到文件</button></div></footer>
+          </form>
+        </dialog>
+        <dialog id="git-dialog" aria-labelledby="git-title">
+          <header class="editor-header"><h2 id="git-title">执行推送</h2><button type="button" id="close-git" class="icon-button" aria-label="关闭推送窗口">×</button></header>
+          <section class="git-body">
+            <label for="commit-message">提交说明</label><input id="commit-message" maxlength="300" value="更新书架数据" />
+            <div class="git-actions"><button class="button secondary" data-git="add">git add .</button><button class="button secondary" data-git="commit">git commit</button><button class="button primary" data-git="push">git push origin main</button></div>
+            <pre id="git-terminal" class="git-terminal" role="log" aria-live="polite" aria-label="Git实时输出">等待执行命令…</pre>
+          </section>
+        </dialog>
+      </div>
+      <script is:inline type="module" src="/src/admin/admin.ts"></script>
+    )}
+  </body>
+</html>
